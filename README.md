@@ -1,0 +1,186 @@
+# Sweeper Server
+
+게임 플레이 결과를 저장하는 ASP.NET Core Web API입니다. Entity Framework Core와 MySQL을 사용합니다.
+
+## 기술 스택
+
+- .NET 10 / ASP.NET Core Web API
+- Entity Framework Core 9
+- MySQL
+- Pomelo Entity Framework Core MySQL Provider
+
+## 사전 준비
+
+개발 환경에 다음 도구가 필요합니다.
+
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+- MySQL 8 이상
+- EF Core CLI 도구
+
+EF Core CLI가 없다면 설치합니다.
+
+```bash
+dotnet tool install --global dotnet-ef --version 9.*
+```
+
+이미 설치했다면 프로젝트 버전에 맞게 업데이트할 수 있습니다.
+
+```bash
+dotnet tool update --global dotnet-ef --version 9.*
+```
+
+## 1. 프로젝트 내려받기 및 패키지 복원
+
+```bash
+git clone <repository-url>
+cd sweeper-server
+dotnet restore
+```
+
+## 2. MySQL 데이터베이스 준비
+
+MySQL에 관리자 계정으로 접속한 뒤 데이터베이스와 개발용 계정을 생성합니다. 아래 비밀번호는 예시이므로 실제 개발 환경에 맞게 변경하세요.
+
+```sql
+CREATE DATABASE sweeper_server
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'sweeper_user'@'localhost'
+    IDENTIFIED BY 'change_me';
+
+GRANT ALL PRIVILEGES ON sweeper_server.*
+    TO 'sweeper_user'@'localhost';
+
+FLUSH PRIVILEGES;
+```
+
+## 3. 연결 문자열 설정
+
+비밀번호가 저장소에 남지 않도록 환경 변수나 .NET User Secrets 사용을 권장합니다.
+
+### User Secrets 사용
+
+최초 한 번 User Secrets를 초기화하고 연결 문자열을 등록합니다.
+
+```bash
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:SweeperDB" "server=localhost;port=3306;database=sweeper_server;user=sweeper_user;password=change_me"
+```
+
+### 환경 변수 사용
+
+PowerShell:
+
+```powershell
+$env:ConnectionStrings__SweeperDB = "server=localhost;port=3306;database=sweeper_server;user=sweeper_user;password=change_me"
+```
+
+bash/zsh:
+
+```bash
+export ConnectionStrings__SweeperDB="server=localhost;port=3306;database=sweeper_server;user=sweeper_user;password=change_me"
+```
+
+환경 변수의 이중 밑줄(`__`)은 설정 키의 구분자인 `:`에 해당합니다.
+
+## 4. 데이터베이스 마이그레이션 적용
+
+프로젝트 루트에서 기존 마이그레이션을 적용합니다.
+
+```bash
+dotnet ef database update
+```
+
+모델을 변경한 경우 새 마이그레이션을 만든 뒤 적용합니다.
+
+```bash
+dotnet ef migrations add <MigrationName>
+dotnet ef database update
+```
+
+## 5. 서버 실행
+
+```bash
+dotnet run
+```
+
+개발 프로필의 기본 주소는 다음과 같습니다.
+
+- HTTP: `http://localhost:5065`
+- HTTPS: `https://localhost:7097`
+
+HTTPS 개발 인증서를 신뢰해야 한다면 다음 명령을 실행합니다.
+
+```bash
+dotnet dev-certs https --trust
+```
+
+## API 확인
+
+플레이 결과 저장:
+
+```http
+POST /api/result/achieve
+Content-Type: application/json
+```
+
+요청 예시:
+
+```json
+{
+  "name": "player1",
+  "score": 1200,
+  "startedTime": "2026-08-19T10:00:00Z",
+  "endedTime": "2026-08-19T10:05:00Z"
+}
+```
+
+`curl`로 확인하는 예시:
+
+```bash
+curl -X POST "http://localhost:5065/api/result/achieve" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"player1","score":1200,"startedTime":"2026-08-19T10:00:00Z","endedTime":"2026-08-19T10:05:00Z"}'
+```
+
+성공 응답 예시:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "player1",
+    "score": 1200
+  },
+  "errorCode": null
+}
+```
+
+## 빌드 확인
+
+```bash
+dotnet build
+```
+
+빌드 결과물은 기본적으로 `bin/Debug/net10.0`에 생성됩니다.
+
+## 주요 폴더
+
+```text
+Controllers/   API 엔드포인트
+Datas/         EF Core DbContext
+Dtos/          요청 및 응답 DTO
+Migrations/    데이터베이스 마이그레이션
+Models/        데이터 모델
+Responses/     공통 API 응답 형식
+Services/      비즈니스 로직
+```
+
+## 문제 해결
+
+- **MySQL 연결 실패**: MySQL 실행 여부, 포트 `3306`, 계정 권한과 연결 문자열을 확인합니다.
+- **`dotnet ef`를 찾을 수 없음**: EF Core CLI를 설치한 뒤 터미널을 다시 엽니다.
+- **HTTPS 인증서 오류**: `dotnet dev-certs https --trust`를 실행하거나 HTTP 주소를 사용합니다.
+- **마이그레이션 버전 문제**: `dotnet-ef` 도구와 EF Core 패키지가 모두 9.x인지 확인합니다.
