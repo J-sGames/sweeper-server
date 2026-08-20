@@ -2,6 +2,18 @@
 
 게임 플레이 결과를 저장하는 ASP.NET Core Web API입니다. Entity Framework Core와 MySQL을 사용합니다.
 
+## 프로젝트 소개
+
+Sweeper Server는 게임 클라이언트에서 전달받은 플레이 결과를 검증하고 MySQL에 저장하는 백엔드 API 서버입니다. 플레이어 이름, 점수, 플레이 시작 시각과 종료 시각을 기록하며, 저장 결과를 공통 형식의 JSON 응답으로 반환합니다.
+
+### 주요 기능
+
+- 게임 플레이 결과 등록
+- 플레이어 이름 유효성 검사
+- 플레이 시작·종료 시각 검증
+- Entity Framework Core를 통한 MySQL 데이터 저장
+- 성공 여부와 오류 코드를 포함한 일관된 API 응답 제공
+
 ## 기술 스택
 
 - .NET 10 / ASP.NET Core Web API
@@ -158,10 +170,96 @@ curl -X POST "http://localhost:5065/api/result/achieve" \
 }
 ```
 
+### API 응답 요약
+
+모든 응답은 다음 공통 형식을 사용합니다.
+
+| 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `success` | `boolean` | 요청 처리 성공 여부 |
+| `data` | `object \| null` | 성공 시 저장된 결과 데이터 |
+| `errorCode` | `string \| null` | 실패 원인을 나타내는 오류 코드 |
+
+성공하면 HTTP `200 OK`와 함께 저장된 플레이 결과를 반환합니다.
+
+| `data` 필드 | 타입 | 설명 |
+| --- | --- | --- |
+| `id` | `number` | 생성된 플레이 기록 ID |
+| `name` | `string` | 공백을 제거한 플레이어 이름 |
+| `score` | `number` | 저장된 점수 |
+
+입력값 검증에 실패하면 HTTP `400 Bad Request`를 반환합니다.
+
+| 오류 코드 | 발생 조건 |
+| --- | --- |
+| `INVALID_NAME` | 플레이어 이름이 비어 있거나 공백으로만 구성된 경우 |
+| `INVALID_PLAYTIME` | 종료 시각이 시작 시각보다 빠른 경우 |
+
+실패 응답 예시:
+
+```json
+{
+  "success": false,
+  "data": null,
+  "errorCode": "INVALID_NAME"
+}
+```
+
 ## 빌드 확인
 
 ```bash
 dotnet build
+```
+
+## 인증 설정
+
+JWT 서명 키와 Google OAuth 클라이언트 ID는 저장소에 넣지 말고 User Secrets로 설정합니다.
+
+```bash
+dotnet user-secrets set "Jwt:Key" "32바이트-이상의-충분히-긴-임의의-비밀키"
+dotnet user-secrets set "Google:ClientId" "Google-Cloud에서-발급한-클라이언트-ID"
+```
+
+인증 테이블을 데이터베이스에 반영합니다.
+
+```bash
+dotnet ef database update
+```
+
+### 인증 API
+
+| Method | 경로 | 설명 |
+| --- | --- | --- |
+| `POST` | `/api/auth/register` | ID/비밀번호 회원가입 및 로그인 |
+| `POST` | `/api/auth/login` | ID/비밀번호 로그인 |
+| `POST` | `/api/auth/google` | Google ID Token 로그인 및 최초 자동 가입 |
+| `POST` | `/api/auth/refresh` | Access/Refresh Token 갱신 |
+| `POST` | `/api/auth/logout` | Refresh Token 폐기 |
+| `GET` | `/api/auth/me` | 현재 사용자 조회 (`Bearer` 인증 필요) |
+
+자체 회원가입 요청 예시:
+
+```json
+{
+  "loginId": "player01",
+  "password": "Example1234!",
+  "nickname": "플레이어"
+}
+```
+
+Google 로그인 요청에서는 클라이언트의 Google SDK가 발급한 ID Token을 전달합니다.
+
+```json
+{
+  "idToken": "google-id-token",
+  "nickname": "플레이어"
+}
+```
+
+로그인 성공 후 보호된 API에는 다음 헤더를 사용합니다.
+
+```http
+Authorization: Bearer <accessToken>
 ```
 
 빌드 결과물은 기본적으로 `bin/Debug/net10.0`에 생성됩니다.

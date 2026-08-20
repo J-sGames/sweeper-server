@@ -1,6 +1,89 @@
-@sweeper_server_HostAddress = http://localhost:5065
+@host = http://localhost:5065
+@contentType = application/json
 
-GET {{sweeper_server_HostAddress}}/weatherforecast/
-Accept: application/json
+# 같은 회원가입 요청을 다시 보내면 LOGIN_ID_ALREADY_EXISTS가 반환됩니다.
+# 반복 테스트할 때는 loginId와 nickname의 숫자를 함께 변경하세요.
+@loginId = test_player_01
+@password = TestPassword123!
+@nickname = 테스트플레이어01
 
-###
+### 자체 계정 회원가입 + 즉시 로그인
+# @name register
+POST {{host}}/api/auth/register
+Content-Type: {{contentType}}
+
+{
+  "loginId": "{{loginId}}",
+  "password": "{{password}}",
+  "nickname": "{{nickname}}"
+}
+
+### 자체 계정 로그인
+# @name login
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "loginId": "{{loginId}}",
+  "password": "{{password}}"
+}
+
+### 현재 사용자 조회
+GET {{host}}/api/auth/me
+Accept: {{contentType}}
+Authorization: Bearer {{login.response.body.$.data.accessToken}}
+
+### Access Token 및 Refresh Token 갱신
+# @name refresh
+POST {{host}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{login.response.body.$.data.refreshToken}}"
+}
+
+### 갱신된 Access Token으로 현재 사용자 조회
+GET {{host}}/api/auth/me
+Accept: {{contentType}}
+Authorization: Bearer {{refresh.response.body.$.data.accessToken}}
+
+### 로그아웃 - 갱신된 Refresh Token 폐기
+POST {{host}}/api/auth/logout
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refresh.response.body.$.data.refreshToken}}"
+}
+
+### 잘못된 비밀번호 - INVALID_CREDENTIALS 확인용
+POST {{host}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+  "loginId": "{{loginId}}",
+  "password": "WrongPassword123!"
+}
+
+### Google 로그인 및 최초 자동 가입
+# Google SDK에서 받은 실제 ID Token으로 아래 값을 교체하세요.
+@googleIdToken = PASTE_REAL_GOOGLE_ID_TOKEN_HERE
+
+POST {{host}}/api/auth/google
+Content-Type: {{contentType}}
+
+{
+  "idToken": "{{googleIdToken}}",
+  "nickname": "구글테스트유저"
+}
+
+### 플레이 결과 등록
+POST {{host}}/api/result/achieve
+Content-Type: {{contentType}}
+Authorization: Bearer {{login.response.body.$.data.accessToken}}
+
+{
+  "name": "{{nickname}}",
+  "score": 1200,
+  "startedTime": "2026-08-20T10:00:00Z",
+  "endedTime": "2026-08-20T10:05:00Z"
+}
