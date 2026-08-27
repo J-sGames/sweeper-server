@@ -87,3 +87,11 @@ Authorization: Bearer {{login.response.body.$.data.accessToken}}
   "startedTime": "2026-08-20T10:00:00Z",
   "endedTime": "2026-08-20T10:05:00Z"
 }
+
+### 랭킹 1~10위 조회
+GET {{host}}/api/result/ranking?page=1&pageSize=10
+Accept: {{contentType}}
+
+### 랭킹 11~20위 조회
+GET {{host}}/api/result/ranking?page=2&pageSize=10
+Accept: {{contentType}}
