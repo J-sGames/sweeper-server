@@ -195,22 +195,6 @@ curl -X POST "http://localhost:5065/api/result/achieve" \
 | `INVALID_NAME` | 플레이어 이름이 비어 있거나 공백으로만 구성된 경우 |
 | `INVALID_PLAYTIME` | 종료 시각이 시작 시각보다 빠른 경우 |
 
-### 랭킹 조회
-
-전체 플레이 기록을 반환하지 않고 페이지 단위로 점수 내림차순 조회합니다.
-
-```http
-GET /api/result/ranking?page=1&pageSize=10
-```
-
-- `page` 기본값은 `1`이며 1부터 시작합니다.
-- `pageSize` 기본값은 `10`이며 허용 범위는 `1`~`100`입니다.
-- `page=1&pageSize=10`은 1~10위, `page=2&pageSize=10`은 11~20위를 반환합니다.
-- 동점은 종료 시각이 빠른 기록, 그다음 ID가 작은 기록 순으로 정렬합니다.
-- 잘못된 페이지는 `INVALID_RANKING_PAGE`, 잘못된 크기는 `INVALID_RANKING_PAGE_SIZE`를 반환합니다.
-
-성공 응답의 `data`에는 `page`, `pageSize`, `hasNext`, `items`가 포함됩니다. `items`의 각 항목은 전체 랭킹 기준 `rank`, `name`, `score`, `achievedAt`을 가집니다.
-
 실패 응답 예시:
 
 ```json
@@ -242,7 +226,7 @@ dotnet user-secrets set "Google:ClientId" "Google-Cloud에서-발급한-클라�
 dotnet ef database update
 ```
 
-### 인증 API
+### API 라우팅 경로
 
 | Method | 경로 | 설명 |
 | --- | --- | --- |
@@ -252,6 +236,8 @@ dotnet ef database update
 | `POST` | `/api/auth/refresh` | Access/Refresh Token 갱신 |
 | `POST` | `/api/auth/logout` | Refresh Token 폐기 |
 | `GET` | `/api/auth/me` | 현재 사용자 조회 (`Bearer` 인증 필요) |
+| `POST` | `/api/result/achieve` | 플레이 결과 등록 |
+| `GET` | `/api/result/ranking?page={page}&pageSize={pageSize}` | 페이지 단위 랭킹 조회 (`{page}`, `{pageSize}`에 원하는 값 입력) |
 
 자체 회원가입 요청 예시:
 
