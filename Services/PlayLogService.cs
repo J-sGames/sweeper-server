@@ -50,12 +50,18 @@ namespace SweeperServer.Services
             _db.PlayLogs.Add(playLog);
             await _db.SaveChangesAsync();
 
+            var rank = await _db.PlayLogs.CountAsync(x =>
+                x.Score > playLog.Score ||
+                (x.Score == playLog.Score && x.EndedTime < playLog.EndedTime) ||
+                (x.Score == playLog.Score && x.EndedTime == playLog.EndedTime && x.Id < playLog.Id)) + 1;
+
             return new ApiResponse<PlayLogResponse>
             {
                 Success = true,
                 Data = new PlayLogResponse
                 {
                     Id = playLog.Id,
+                    Rank = rank,
                     Name = playLog.Name,
                     Score = playLog.Score
                 }

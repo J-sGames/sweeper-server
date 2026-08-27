@@ -77,6 +77,7 @@ Content-Type: {{contentType}}
 }
 
 ### 플레이 결과 등록
+# 성공 응답의 data.rank에서 등록 직후 전체 랭킹 기준 등수를 확인할 수 있습니다.
 POST {{host}}/api/result/achieve
 Content-Type: {{contentType}}
 Authorization: Bearer {{login.response.body.$.data.accessToken}}

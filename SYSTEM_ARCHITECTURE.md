@@ -116,7 +116,7 @@ Sweeper Server는 게임 플레이 결과와 사용자 인증을 처리하는 AS
 ### `Services/PlayLogService.cs` — `PlayLogService`
 
 - `InsertPlayLogAsync`: 이름 공백 여부와 시작/종료 시간 순서를 검사한다.
-- 성공 시 `PlayLog`를 저장하고 ID, 이름, 점수가 포함된 `PlayLogResponse`를 반환한다.
+- 성공 시 `PlayLog`를 저장하고 랭킹과 동일한 정렬 기준으로 등록 직후 등수를 계산해 ID, 등수, 이름, 점수가 포함된 `PlayLogResponse`를 반환한다.
 - 오류 코드는 `INVALID_NAME`, `INVALID_PLAYTIME`이다.
 - 점수 범위, 날짜의 UTC 여부, 사용자 소유권은 현재 검증하지 않는다.
 - `GetRankingAsync`: `page`는 1 이상, `pageSize`는 1~100으로 제한하고 점수 내림차순, 종료 시각, ID 순으로 정렬한다.
@@ -147,7 +147,7 @@ Sweeper Server는 게임 플레이 결과와 사용자 인증을 처리하는 AS
 ### 플레이 기록 DTO
 
 - `Dtos/PlayLogRequest.cs` — `PlayLogRequest`: 이름, 점수, 시작 시각, 종료 시각 입력.
-- `Dtos/PlayLogResponse.cs` — `PlayLogResponse`: 생성 ID, 이름, 점수 출력.
+- `Dtos/PlayLogResponse.cs` — `PlayLogResponse`: 생성 ID, 등록 직후 전체 등수, 이름, 점수 출력.
 - `Dtos/RankingResponse.cs` — `RankingPageResponse`: 현재 페이지, 페이지 크기, 다음 페이지 여부, 랭킹 항목 목록 출력. `RankingResponse`: 전체 기준 순위, 이름, 점수, 달성 시각 출력.
 
 ### `Responses/ApiResponses.cs` — `ApiResponse<T>`
@@ -239,6 +239,7 @@ LogController.Login
   → PlayLogService.InsertPlayLogAsync
   → 이름/시간 검증
   → PlayLog 저장
+  → Score DESC, EndedTime ASC, Id ASC 기준으로 등록 기록보다 앞선 행을 계산
   → ApiResponse<PlayLogResponse>
 ```
 

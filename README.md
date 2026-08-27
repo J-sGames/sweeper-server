@@ -163,6 +163,7 @@ curl -X POST "http://localhost:5065/api/result/achieve" \
   "success": true,
   "data": {
     "id": 1,
+    "rank": 1,
     "name": "player1",
     "score": 1200
   },
@@ -185,6 +186,7 @@ curl -X POST "http://localhost:5065/api/result/achieve" \
 | `data` 필드 | 타입 | 설명 |
 | --- | --- | --- |
 | `id` | `number` | 생성된 플레이 기록 ID |
+| `rank` | `number` | 등록 직후 전체 랭킹 기준 등수 |
 | `name` | `string` | 공백을 제거한 플레이어 이름 |
 | `score` | `number` | 저장된 점수 |
 
